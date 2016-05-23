@@ -47,9 +47,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Business\IManager.cs" />
-    <Compile Include="Business\Impl\DeleteFileManager.cs" />
-    <Compile Include="Business\Impl\Manager.cs" />
-    <Compile Include="Business\Impl\SearchFilesManager.cs" />
+    <Compile Include="Business\Impl\DeleteFileBaseManager.cs" />
+    <Compile Include="Business\Impl\BaseManager.cs" />
+    <Compile Include="Business\Impl\SearchFilesBaseManager.cs" />
     <Compile Include="Configuration\DeleteFileWrapper.cs" />
     <Compile Include="Configuration\FileDeletedWrapper.cs" />
     <Compile Include="Configuration\FileExtensions.cs" />

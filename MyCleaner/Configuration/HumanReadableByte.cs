@@ -2,7 +2,7 @@
 
 namespace MyCleaner.Configuration
 {
-    class HumanReadableByte
+    public static class HumanReadableByte
     {
         private static readonly string[] SizeSuffixes = { "bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
 

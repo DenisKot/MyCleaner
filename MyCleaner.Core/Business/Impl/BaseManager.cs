@@ -1,6 +1,6 @@
 ﻿namespace MyCleaner.Core.Business.Impl
 {
-    public abstract class Manager : IManager
+    public abstract class BaseManager : IManager
     {
         protected bool running = true;
 

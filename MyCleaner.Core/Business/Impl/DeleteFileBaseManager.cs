@@ -6,7 +6,7 @@ using MyCleaner.Core.Configuration;
 
 namespace MyCleaner.Core.Business.Impl
 {
-    public class DeleteFileManager : Manager
+    public sealed class DeleteFileBaseManager : BaseManager
     {
         public override void Work(object param)
         {

@@ -13,37 +13,37 @@ namespace MyCleaner
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public sealed partial class MainWindow : Window
     {
-        private SearchFilesManager searchManager = null;
-        private DeleteFileManager deleteManager = null;
+        private SearchFilesBaseManager _searchBaseManager;
+        private DeleteFileBaseManager _deleteBaseManager;
 
-        private long filesSize;
-        private int filesCount;
-        private long deletedFilesLenght;
-        private int deletedFiles;
+        private long _filesSize;
+        private int _filesCount;
+        private long _deletedFilesLenght;
+        private int _deletedFiles;
 
-        private List<string> filesToDelete;
+        private readonly List<string> _filesToDelete;
 
-        private SynchronizationContext context;
+        private readonly SynchronizationContext _context;
 
-        private State state;
+        private State _state;
 
         public MainWindow()
         {
             InitializeComponent();
-            filesToDelete = new List<string>();
+            this._filesToDelete = new List<string>();
 
-            state = State.None;
+            this._state = State.None;
 
             MainBtn.Click += MainButtonClick;
 
-            context = SynchronizationContext.Current;
+            this._context = SynchronizationContext.Current;
         }
 
         private void MainButtonClick(object sender, EventArgs e)
         {
-            switch (state)
+            switch (this._state)
             {
                 case State.None:
                 case State.Aborted:
@@ -71,104 +71,103 @@ namespace MyCleaner
 
         private void SearchFiles()
         {
-            state = State.Searching;
+            this._state = State.Searching;
             MainBtn.Content = "Stop";
 
             LogTextBox.Document.Blocks.Clear();
             LogTextBox.Document.Blocks.Add(new Paragraph(new Run("Scanning...")));
 
-            filesToDelete.Clear();
-            filesSize = 0;
-            filesCount = 0;
+            this._filesToDelete.Clear();
+            this._filesSize = 0;
+            this._filesCount = 0;
 
             FilesSizeLabel.Content = HumanReadableByte.GetSize(0);
             FilesCountLabel.Content = "0 files";
 
-            if (searchManager == null)
+            if (this._searchBaseManager == null)
             {
-                searchManager = new SearchFilesManager();
+                this._searchBaseManager = new SearchFilesBaseManager();
 
-                searchManager.OnProgressChanged += WorkerProgressChanged;
-                searchManager.OnFinished += SearchFilesComplete;
+                this._searchBaseManager.OnProgressChanged += WorkerProgressChanged;
+                this._searchBaseManager.OnFinished += this.SearchBaseFilesComplete;
             }
 
             //// Start Seraching
-            Thread thread = new Thread(searchManager.Work);
-            thread.Start(context);
+            Thread thread = new Thread(this._searchBaseManager.Work);
+            thread.Start(this._context);
         }
 
         private void CancelSearching()
         {
-            searchManager.Canel();
+            this._searchBaseManager.Canel();
         }
 
         private void Clean()
         {
-            state = State.Cleaning;
+            this._state = State.Cleaning;
             MainBtn.Content = "Stop";
 
-            deletedFiles = 0;
-            deletedFilesLenght = 0;
+            this._deletedFiles = 0;
+            this._deletedFilesLenght = 0;
 
             LogTextBox.Document.Blocks.Clear();
             LogTextBox.Document.Blocks.Add(new Paragraph(new Run("Deleting...")));
 
-            if (deleteManager == null)
+            if (this._deleteBaseManager == null)
             {
-                deleteManager = new DeleteFileManager();
+                this._deleteBaseManager = new DeleteFileBaseManager();
 
-                deleteManager.OnFileDeleted += FileDeleted;
-                deleteManager.OnFileNotDeleted += FileNotDeleted;
-                deleteManager.OnFinished += CleanFinished;
+                this._deleteBaseManager.OnFileDeleted += FileDeleted;
+                this._deleteBaseManager.OnFileNotDeleted += FileNotDeleted;
+                this._deleteBaseManager.OnFinished += CleanFinished;
             }
 
             DeleteFileWrapper wrapper = new DeleteFileWrapper();
-            wrapper.Context = context;
-            wrapper.FilesList = filesToDelete;
+            wrapper.Context = this._context;
+            wrapper.FilesList = this._filesToDelete;
 
-            Thread thread = new Thread(deleteManager.Work);
+            Thread thread = new Thread(this._deleteBaseManager.Work);
             thread.Start(wrapper);
         }
 
         private void StopCleaning()
         {
-            deleteManager.Canel();
+            this._deleteBaseManager.Canel();
         }
-
-
+        
         /// <summary>
         /// Progress
         /// </summary>
         /// <param name="file"></param>
         private void WorkerProgressChanged(string file)
         {
-            filesToDelete.Add(file);
+            this._filesToDelete.Add(file);
 
             long fileSize = new FileInfo(file).Length;
 
             LogTextBox.Document.Blocks.Add(new Paragraph(new Run(file + " - " + HumanReadableByte.GetSize(fileSize))));
 
-            filesSize += fileSize;
-            filesCount++;
+            this._filesSize += fileSize;
+            this._filesCount++;
 
-            FilesSizeLabel.Content = HumanReadableByte.GetSize(filesSize);
-            FilesCountLabel.Content = Convert.ToString(filesCount) + " files";
+            FilesSizeLabel.Content = HumanReadableByte.GetSize(this._filesSize);
+            FilesCountLabel.Content = Convert.ToString(this._filesCount) + " files";
         }
 
         /// <summary>
         /// Finished Search Files
         /// </summary>
         /// <param name="successfull"></param>
-        private void SearchFilesComplete(bool successfull)
+        private void SearchBaseFilesComplete(bool successfull)
         {
             if (successfull)
             {
-                state = State.SearchedWaiting;
+                this._state = State.SearchedWaiting;
                 MainBtn.Content = "Clean";
             }
             else
             {
-                state = State.Aborted;
+                this._state = State.Aborted;
                 MainBtn.Content = "Search Again";
             }
         }
@@ -182,11 +181,11 @@ namespace MyCleaner
         {
             LogTextBox.Document.Blocks.Add(new Paragraph(new Run(file)));
 
-            deletedFiles++;
-            deletedFilesLenght += size;
+            this._deletedFiles++;
+            this._deletedFilesLenght += size;
 
-            FilesSizeLabel.Content = "Deleted: " + HumanReadableByte.GetSize(deletedFilesLenght); 
-            FilesCountLabel.Content = "Deleted: " + deletedFiles + " files";
+            FilesSizeLabel.Content = "Deleted: " + HumanReadableByte.GetSize(this._deletedFilesLenght); 
+            FilesCountLabel.Content = "Deleted: " + this._deletedFiles + " files";
         }
 
         /// <summary>
@@ -203,17 +202,17 @@ namespace MyCleaner
         {
             if (successful)
             {
-                state = State.Finished;
+                this._state = State.Finished;
                 MainBtn.Content = "Successful";
             }
             else
             {
-                state = State.Aborted;
+                this._state = State.Aborted;
                 MainBtn.Content = "Search Again";
             }
 
-            FilesSizeLabel.Content = "Deleted: " + HumanReadableByte.GetSize(deletedFilesLenght); 
-            FilesCountLabel.Content = "Deleted: " + deletedFiles + " files";
+            FilesSizeLabel.Content = "Deleted: " + HumanReadableByte.GetSize(this._deletedFilesLenght); 
+            FilesCountLabel.Content = "Deleted: " + this._deletedFiles + " files";
         }
     }
 }
